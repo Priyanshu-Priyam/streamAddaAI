@@ -1,7 +1,7 @@
 import streamlit as st
 import openai
 
-def get_response(api_key, message):
+def get_response(api_key, message, chat_history):
     client = openai.OpenAI(api_key=api_key)
     system_prompt = """
     <System_Prompt>
@@ -11,13 +11,20 @@ def get_response(api_key, message):
         </role>
     </System_Prompt>
     """
+    
+    # Preparing prompt with historical context
+    context = system_prompt
+    for q, a in chat_history:
+        context += f"\n\nUser: {q}\nAssistant: {a}"
+
+    context += f"\n\nUser: {message}\nAssistant:"
 
     try:
         response = client.chat.completions.create(
             model="gpt-3.5-turbo-0125",
             messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"Here is the student's question:\n\n{message}"},
+                {"role": "system", "content": context},
+                {"role": "user", "content": message},
                 {"role": "assistant", "content": " "}
             ],
         )
@@ -45,7 +52,7 @@ def main():
 
         if st.button('Send'):
             if user_input and api_key:
-                response = get_response(api_key, user_input)
+                response = get_response(api_key, user_input, st.session_state['chat_history'])
                 st.session_state['chat_history'].append(("You: " + user_input, "AddaAI: " + response))
                 st.experimental_rerun()  # Rerun the app to clear the input and refresh the chat history
             else:
