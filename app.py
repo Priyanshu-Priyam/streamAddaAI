@@ -11,7 +11,7 @@ MODEL_function_call= "gpt-3.5-turbo-0125"
 
 
 client = OpenAI(
-  api_key="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",
+  api_key="sk-proj-vsHEz8Asni5Iaqx4ToyST3BlbkFJqAC8S4lnE1Uu6xkFG7iq",
 )
 
 
