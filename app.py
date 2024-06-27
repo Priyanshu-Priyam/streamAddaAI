@@ -1,26 +1,93 @@
+import json
+import requests
+import os
+from openai import OpenAI
 import streamlit as st
 import openai
 
-# Set your OpenAI API key here
-openai.api_key = 'your-openai-api-key'
+
+MODEL ="gpt-3.5-turbo-0125"
+MODEL_function_call= "gpt-3.5-turbo-0125"
+
+
+client = OpenAI(
+  api_key="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",
+)
+
+
 
 def get_response(message):
-    response = openai.Completion.create(
-        engine="text-davinci-002", 
-        prompt=message, 
-        max_tokens=150
-    )
-    return response.choices[0].text.strip()
+
+ 
+    
+    MODEL ="gpt-3.5-turbo-0125"
+
+
+    Sys_Prompt= """
+
+    <System_Prompt>
+        <role>
+            Your primary goal is to:
+
+            2. Act as a helpful doubt solver and resolve student queries properly.
+
+        </role>
+
+       
+    </System_Prompt>
+    """
+    
+    try:
+        
+        response = client.chat.completions.create(
+            model=MODEL,
+
+
+            messages = [
+                       {"role": "system", "content": Sys_Prompt},
+                       {"role": "user", "content": f"""
+
+                        Here is the student's question:
+
+                        {message}
+
+                        """
+
+                        },
+
+                        {"role": "assistant", "content": " "}
+                       ],
+
+        )
+
+
+
+        data = response.choices[0].message.content
+        data = json.loads(data)
+
+
+        return data
+
+
+
+    except Exception as e:
+        return f"An error occurred: {str(e)}"
+
+
+
+
+
+
 
 def main():
-    st.title('OpenAI GPT Chatbot')
+    st.title('AddaAI Chatbot')
     
     user_input = st.text_input("Type your message here:")
     
     if st.button('Send'):
         if user_input:
             response = get_response(user_input)
-            st.text_area("GPT-3 Response:", value=response, height=200)
+            st.text_area("AddaAI Response:", value=response, height=200)
         else:
             st.write("Please type a message to get a response.")
 
