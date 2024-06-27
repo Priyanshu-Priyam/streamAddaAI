@@ -29,11 +29,16 @@ def get_response(api_key, message):
 def main():
     st.title('AddaAI Chatbot')
 
-    # Persistent API key input that does not vanish
-    api_key = st.text_input("Enter your OpenAI API Key:", type="password", key="api_key")
-
     if 'chat_history' not in st.session_state:
         st.session_state.chat_history = []
+
+    # Display the conversation history
+    for question, answer in st.session_state['chat_history']:
+        st.text_area("Question:", value=question, height=100, key=question + "_q")
+        st.text_area("Answer:", value=answer, height=150, key=answer + "_a")
+
+    # Persistent API key input that does not vanish
+    api_key = st.text_input("Enter your OpenAI API Key:", type="password", key="api_key")
 
     user_input = st.text_input("Type your message here:", key="user_input")
 
@@ -41,13 +46,12 @@ def main():
         if user_input and api_key:
             response = get_response(api_key, user_input)
             st.session_state.chat_history.append(("You: " + user_input, "AddaAI: " + response))
+            # Clear the message input box after sending the message
+            st.session_state['user_input'] = ""
+            # Scroll to last message
+            st.experimental_rerun()
         else:
             st.error("Both API key and a message are required to send.")
-
-    # Display the conversation history
-    for idx, (question, answer) in enumerate(st.session_state.chat_history):
-        st.text_area("Question:", value=question, height=100, key=f"q_{idx}")
-        st.text_area("Answer:", value=answer, height=150, key=f"a_{idx}")
 
 if __name__ == '__main__':
     main()
