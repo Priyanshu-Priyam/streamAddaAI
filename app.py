@@ -27,32 +27,34 @@ def get_response(api_key, message):
     except Exception as e:
         return f"An error occurred: {str(e)}"
 
+def send_message():
+    if 'api_key' in st.session_state and st.session_state.api_key and st.session_state.user_input:
+        response = get_response(st.session_state.api_key, st.session_state.user_input)
+        # Store the pair of question and response in session state
+        st.session_state['chat_history'].append(("You: " + st.session_state.user_input, "AddaAI: " + response))
+        # Clear input box after sending
+        st.session_state.user_input = ""
+
 def main():
     st.title('AddaAI Chatbot')
 
     # Input for API Key
-    api_key = st.text_input("Enter your OpenAI API Key:", type="password")
+    if 'api_key' not in st.session_state:
+        st.session_state.api_key = st.text_input("Enter your OpenAI API Key:", type="password")
 
     if 'chat_history' not in st.session_state:
         st.session_state['chat_history'] = []
 
-    user_input = st.text_input("Type your message here:", key="user_input")
-
-    if st.button('Send') and api_key and user_input:
-        response = get_response(api_key, user_input)
-        # Store the pair of question and response in session state
-        st.session_state['chat_history'].append(("You: " + user_input, "AddaAI: " + response))
-        # Clear input box after sending
-        st.session_state.user_input = ""
+    st.text_input("Type your message here:", key="user_input", on_change=send_message)
 
     # Display the conversation history
     for question, answer in st.session_state['chat_history']:
-        st.text_area("", value=question, height=100, key=question)
-        st.text_area("", value=answer, height=150, key=answer)
+        st.text_area("", value=question, height=100, key=question + "_q")
+        st.text_area("", value=answer, height=150, key=answer + "_a")
 
-    if not api_key:
+    if st.session_state.api_key == "":
         st.error("API Key is required to interact with OpenAI.")
-    elif not user_input:
+    elif st.session_state.user_input == "":
         st.error("Please type a message to get a response.")
 
 if __name__ == '__main__':
