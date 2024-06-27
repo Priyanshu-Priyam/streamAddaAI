@@ -40,16 +40,14 @@ def main():
     # Persistent API key input that does not vanish
     api_key = st.text_input("Enter your OpenAI API Key:", type="password", key="api_key")
 
-    user_input = st.text_input("Type your message here:", key="user_input")
+    user_input = st.text_input("Type your message here:", key="new_user_input")
 
     if st.button('Send'):
         if user_input and api_key:
             response = get_response(api_key, user_input)
             st.session_state.chat_history.append(("You: " + user_input, "AddaAI: " + response))
-            # Clear the message input box after sending the message
-            st.session_state['user_input'] = ""
-            # Scroll to last message
-            st.experimental_rerun()
+            # Manually clear the input
+            st.session_state['new_user_input'] = ""
         else:
             st.error("Both API key and a message are required to send.")
 
