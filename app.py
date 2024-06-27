@@ -1,4 +1,3 @@
-import json
 import streamlit as st
 import openai
 
@@ -27,35 +26,28 @@ def get_response(api_key, message):
     except Exception as e:
         return f"An error occurred: {str(e)}"
 
-def send_message():
-    if 'api_key' in st.session_state and st.session_state.api_key and st.session_state.user_input:
-        response = get_response(st.session_state.api_key, st.session_state.user_input)
-        # Store the pair of question and response in session state
-        st.session_state['chat_history'].append(("You: " + st.session_state.user_input, "AddaAI: " + response))
-        # Clear input box after sending
-        st.session_state.user_input = ""
-
 def main():
     st.title('AddaAI Chatbot')
 
-    # Input for API Key
-    if 'api_key' not in st.session_state:
-        st.session_state.api_key = st.text_input("Enter your OpenAI API Key:", type="password")
+    # Persistent API key input that does not vanish
+    api_key = st.text_input("Enter your OpenAI API Key:", type="password", key="api_key")
 
     if 'chat_history' not in st.session_state:
-        st.session_state['chat_history'] = []
+        st.session_state.chat_history = []
 
-    st.text_input("Type your message here:", key="user_input", on_change=send_message)
+    user_input = st.text_input("Type your message here:", key="user_input")
+
+    if st.button('Send'):
+        if user_input and api_key:
+            response = get_response(api_key, user_input)
+            st.session_state.chat_history.append(("You: " + user_input, "AddaAI: " + response))
+        else:
+            st.error("Both API key and a message are required to send.")
 
     # Display the conversation history
-    for question, answer in st.session_state['chat_history']:
-        st.text_area("", value=question, height=100, key=question + "_q")
-        st.text_area("", value=answer, height=150, key=answer + "_a")
-
-    if st.session_state.api_key == "":
-        st.error("API Key is required to interact with OpenAI.")
-    elif st.session_state.user_input == "":
-        st.error("Please type a message to get a response.")
+    for idx, (question, answer) in enumerate(st.session_state.chat_history):
+        st.text_area("Question:", value=question, height=100, key=f"q_{idx}")
+        st.text_area("Answer:", value=answer, height=150, key=f"a_{idx}")
 
 if __name__ == '__main__':
     main()
