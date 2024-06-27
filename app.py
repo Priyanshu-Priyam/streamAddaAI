@@ -28,26 +28,28 @@ def get_response(api_key, message):
 def main():
     st.title('AddaAI Chatbot')
 
+    # Persistent API key input fixed at the top
+    with st.container():
+        api_key = st.text_input("Enter your OpenAI API Key:", type="password", key="api_key")
+
     if 'chat_history' not in st.session_state:
         st.session_state['chat_history'] = []
 
     # Display the conversation history
-    for question, answer in st.session_state['chat_history']:
-        st.text_area("Question:", value=question, height=100, key=question + "_q")
-        st.text_area("Answer:", value=answer, height=150, key=answer + "_a")
+    with st.container():
+        for question, answer in st.session_state['chat_history']:
+            st.text_area("Question:", value=question, height=100, key=question + "_q")
+            st.text_area("Answer:", value=answer, height=150, key=answer + "_a")
 
-    # Persistent API key input that does not vanish
-    api_key = st.text_input("Enter your OpenAI API Key:", type="password", key="api_key")
+        user_input = st.text_input("Type your message here:", key="user_input")
 
-    user_input = st.text_input("Type your message here:", key="user_input")
-
-    if st.button('Send'):
-        if user_input and api_key:
-            response = get_response(api_key, user_input)
-            st.session_state['chat_history'].append(("You: " + user_input, "AddaAI: " + response))
-            st.experimental_rerun()  # Rerun the app to clear the input and refresh the chat history
-        else:
-            st.error("Both API key and a message are required to send.")
+        if st.button('Send'):
+            if user_input and api_key:
+                response = get_response(api_key, user_input)
+                st.session_state['chat_history'].append(("You: " + user_input, "AddaAI: " + response))
+                st.experimental_rerun()  # Rerun the app to clear the input and refresh the chat history
+            else:
+                st.error("Both API key and a message are required to send.")
 
 if __name__ == '__main__':
     main()
