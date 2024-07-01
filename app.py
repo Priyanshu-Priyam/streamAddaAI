@@ -174,5 +174,5 @@ def main():
             else:
                 st.error("An API key and at least a message or image are required to send.")
                 
-if _name_ == '_main_':
+if __name__ == '__main__':
     main()
