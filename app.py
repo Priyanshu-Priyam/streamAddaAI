@@ -95,7 +95,6 @@ def encode_image_to_base64(image):
 def main():
     st.title('AddaAI Chatbot')
 
-    # Persistent API key input fixed at the top
     with st.container():
         api_key = st.text_input("Enter your OpenAI API Key:", type="password", key="api_key")
 
@@ -103,28 +102,33 @@ def main():
         st.session_state['chat_history'] = []
     if 'summary' not in st.session_state:
         st.session_state['summary'] = ""
+    if 'uploaded_image' not in st.session_state:
+        st.session_state['uploaded_image'] = None
 
-    # Display the conversation history
     with st.container():
-        for question, answer in st.session_state['chat_history']:
+        for question, answer, img in st.session_state['chat_history']:
             st.text_area("Question:", value=question, height=100, key=question + "_q")
             st.text_area("Answer:", value=answer, height=150, key=answer + "_a")
+            if img is not None:
+                st.image(img, caption="Uploaded Image", use_column_width=True)
 
         user_input = st.text_input("Type your message here:", key="user_input")
         uploaded_file = st.file_uploader("Upload an image related to your doubt", type=['png', 'jpg', 'jpeg'], key="file_uploader")
 
         if st.button('Send'):
             image_b64 = ""
+            display_image = None
             if uploaded_file is not None:
                 image = Image.open(uploaded_file)
                 image_b64 = encode_image_to_base64(image)
+                display_image = image  # We'll use this to display in the app
 
             if api_key and (user_input or image_b64):
                 response = get_response(api_key, user_input, st.session_state['summary'], image_b64)
-                st.session_state['chat_history'].append((user_input, response))
+                st.session_state['chat_history'].append((user_input, response, display_image))
                 
                 if len(st.session_state['chat_history']) % 5 == 0:
-                    chat_text = "\n".join([f"User: {q}\nAssistant: {a}" for q, a in st.session_state['chat_history']])
+                    chat_text = "\n".join([f"User: {q}\nAssistant: {a}" for q, a, _ in st.session_state['chat_history']])
                     new_summary = summarize_conversation(api_key, chat_text)
                     st.session_state['summary'] = summarize_conversation(api_key, f"{st.session_state['summary']}\n{new_summary}")
                     st.session_state['chat_history'] = []  # Reset the history after summarization
@@ -135,3 +139,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
