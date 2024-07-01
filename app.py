@@ -5,11 +5,18 @@ from PIL import Image
 import io
 from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration
 
+def whisper_transcribe(audio_file_path):
+    with open(audio_file_path, 'rb') as audio_file:
+        transcription = openai.Audio.transcribe("whisper-1", audio_file)
+    return transcription['text']
 
-def whisper_transcribe(audio_data):
-    # Placeholder function to simulate audio processing
-    # Replace this with your actual audio processing code
-    return "Hi, this is the transcribed audio."
+def save_audio_file(audio_data, filename="recorded_audio.wav"):
+    with wave.open(filename, 'wb') as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(16000)
+        wf.writeframes(audio_data)
+    return filename
 
 
 
@@ -100,11 +107,7 @@ def encode_image_to_base64(image):
 
 
 def main():
-    st.title('AddaAI Chatbot')
-    
-
-    with st.container():
-        api_key = st.text_input("Enter your OpenAI API Key:", type="password", key="api_key")
+    st.title('AddaAI Chatbot with Audio Support')
 
     rtc_configuration = RTCConfiguration(
         {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
@@ -119,10 +122,14 @@ def main():
     )
 
     if webrtc_ctx.audio_receiver:
+        audio_frames = webrtc_ctx.audio_receiver.get_frames(timeout=None)
+        audio_data = b''.join([frame.to_ndarray().tobytes() for frame in audio_frames])
+
         if st.button("Transcribe Audio"):
-            audio_frames = webrtc_ctx.audio_receiver.get_frames(timeout=None)
-            audio_data = b''.join([frame.to_ndarray().tobytes() for frame in audio_frames])
-            transcription = whisper_transcribe(audio_data)
+            # Save audio data to a WAV file
+            audio_file_path = save_audio_file(audio_data)
+            # Transcribe the saved audio file
+            transcription = whisper_transcribe(audio_file_path)
             st.write(transcription)
 
     if 'chat_history' not in st.session_state:
