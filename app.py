@@ -87,7 +87,10 @@ def get_response(api_key, message, context, image_b64=None):
 
 def encode_image_to_base64(image):
     
-    return base64.b64encode(image.getvalue()).decode()
+    
+    return base64.b64encode(image.read()).decode('utf-8')
+
+
 
 def main():
     st.title('AddaAI Chatbot')
