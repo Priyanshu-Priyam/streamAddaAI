@@ -12,8 +12,8 @@ RTC_CONFIGURATION = RTCConfiguration({"iceServers": [{"urls": ["stun:stun.l.goog
 MODEL ="gpt-4o"
 
 def whisper_transcribe(audio_file):
-    model = audio.load_model("base")
-    result = model.transcribe(audio_file)
+    # model = audio.load_model("base")
+    # result = model.transcribe(audio_file)
     return "HI Explain me this image"
     # return result['text']
 
