@@ -1,5 +1,4 @@
 import streamlit as st
-from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration
 import asyncio
 
 
@@ -10,11 +9,23 @@ import io
 import asyncio
 # from openai_whisper import audio
 
+from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration, AudioProcessorBase
+
 RTC_CONFIGURATION = RTCConfiguration({
     "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
 })
 
 MODEL ="gpt-4o"
+
+class AudioProcessor(AudioProcessorBase):
+    def recv(self, frame):
+        audio_frames = frame.to_ndarray(format="s16")
+        audio_file = io.BytesIO()
+        audio.save(audio_frames, audio_file, format="wav")
+        audio_file.seek(0)
+        transcribed_text = whisper_transcribe(audio_file)
+        st.session_state['user_input'] = transcribed_text
+        return frame
 
 def whisper_transcribe(audio_file):
     # model = audio.load_model("base")
@@ -123,7 +134,11 @@ def main():
     with st.container():
         # Handling the voice input
         with st.expander("Click to speak"):
-            webrtc_ctx = webrtc_streamer(key="whisper", mode=WebRtcMode.SENDONLY, rtc_configuration=RTC_CONFIGURATION)
+            webrtc_ctx = webrtc_streamer(key="whisper", mode=WebRtcMode.SENDONLY, rtc_configuration=RTC_CONFIGURATION,
+                                         audio_processor_factory=AudioProcessor, media_stream_constraints={"audio": True, "video": False},
+                                         async_processing=True)
+
+            
             if webrtc_ctx.state.playing:
                 audio_processor = webrtc_ctx.audio_receiver
                 if audio_processor:
