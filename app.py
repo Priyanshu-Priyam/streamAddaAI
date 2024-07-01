@@ -1,26 +1,26 @@
-from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration, AudioProcessorBase
+import streamlit as st
 import openai
 import base64
 from PIL import Image
 import io
+from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration
 
-RTC_CONFIGURATION = RTCConfiguration({
-    "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
-})
+def whisper_transcribe(audio_file_path):
+    with open(audio_file_path, 'rb') as audio_file:
+        transcription = openai.Audio.transcribe("whisper-1", audio_file)
+    return transcription['text']
 
-class AudioProcessor(AudioProcessorBase):
-    def recv(self, frame):
-        audio_frames = frame.to_ndarray(format="s16")
-        audio_file = io.BytesIO()
-        audio.save(audio_frames, audio_file, format="wav")
-        audio_file.seek(0)
-        transcribed_text = whisper_transcribe(audio_file)
-        st.session_state['user_input'] = transcribed_text
-        return frame
+def save_audio_file(audio_data, filename="recorded_audio.wav"):
+    with wave.open(filename, 'wb') as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(16000)
+        wf.writeframes(audio_data)
+    return filename
 
-def whisper_transcribe(audio_file):
-    # Dummy function for transcription; replace with actual Whisper API call
-    return "Transcribed text from audio"
+
+
+MODEL ="gpt-4o"
 
 def summarize_conversation(api_key, text):
     client = openai.OpenAI(api_key=api_key)
@@ -98,16 +98,42 @@ def get_response(api_key, message, context, image_b64=None):
         )
         return response.choices[0].message.content
 
+
 def encode_image_to_base64(image):
     buffered = io.BytesIO()
     image.save(buffered, format="JPEG")  # You can change "JPEG" to "PNG" if you prefer
     return base64.b64encode(buffered.getvalue()).decode('utf-8')
 
+
+
 def main():
-    st.title('AddaAI Chatbot')
+    st.title('AddaAI Chatbot with Audio Support')
 
     with st.container():
         api_key = st.text_input("Enter your OpenAI API Key:", type="password", key="api_key")
+
+    rtc_configuration = RTCConfiguration(
+        {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
+    )
+
+    webrtc_ctx = webrtc_streamer(
+        key="audio-recorder",
+        mode=WebRtcMode.SENDRECV,
+        rtc_configuration=rtc_configuration,
+        media_stream_constraints={"audio": True, "video": False},
+        audio_receiver_size=1024,
+    )
+
+    if webrtc_ctx.audio_receiver:
+        audio_frames = webrtc_ctx.audio_receiver.get_frames(timeout=None)
+        audio_data = b''.join([frame.to_ndarray().tobytes() for frame in audio_frames])
+
+        if st.button("Transcribe Audio"):
+            # Save audio data to a WAV file
+            audio_file_path = save_audio_file(audio_data)
+            # Transcribe the saved audio file
+            transcription = whisper_transcribe(audio_file_path)
+            st.write(transcription)
 
     if 'chat_history' not in st.session_state:
         st.session_state['chat_history'] = []
@@ -117,16 +143,11 @@ def main():
         st.session_state['uploaded_image'] = None
 
     with st.container():
-        # Handling the voice input
-        with st.expander("Click to speak"):
-            webrtc_ctx = webrtc_streamer(key="whisper", mode=WebRtcMode.SENDONLY, rtc_configuration=RTC_CONFIGURATION,
-                                         audio_processor_factory=AudioProcessor, media_stream_constraints={"audio": True, "video": False})
-
-        for idx, (question, answer, img) in enumerate(st.session_state['chat_history']):
-            st.text_area(f"Question {idx}:", value=question, height=100, key=f"question_{idx}_q")
-            st.text_area(f"Answer {idx}:", value=answer, height=150, key=f"answer_{idx}_a")
+        for question, answer, img in st.session_state['chat_history']:
+            st.text_area("Question:", value=question, height=100, key=question + "_q")
+            st.text_area("Answer:", value=answer, height=150, key=answer + "_a")
             if img is not None:
-                st.image(img, caption=f"Uploaded Image {idx}", use_column_width=True)
+                st.image(img, caption="Uploaded Image", use_column_width=True)
 
         user_input = st.text_input("Type your message here:", key="user_input")
         uploaded_file = st.file_uploader("Upload an image related to your doubt", type=['png', 'jpg', 'jpeg'], key="file_uploader")
@@ -152,6 +173,6 @@ def main():
                 st.experimental_rerun()  # Rerun the app to clear the input and refresh the chat history
             else:
                 st.error("An API key and at least a message or image are required to send.")
-
-if __name__ == '__main__':
+                
+if _name_ == '_main_':
     main()
