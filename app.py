@@ -109,6 +109,9 @@ def encode_image_to_base64(image):
 def main():
     st.title('AddaAI Chatbot with Audio Support')
 
+    with st.container():
+        api_key = st.text_input("Enter your OpenAI API Key:", type="password", key="api_key")
+
     rtc_configuration = RTCConfiguration(
         {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
     )
