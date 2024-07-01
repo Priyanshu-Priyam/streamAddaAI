@@ -5,7 +5,7 @@ import base64
 from PIL import Image
 import io
 import asyncio
-from openai_whisper import audio
+# from openai_whisper import audio
 
 RTC_CONFIGURATION = RTCConfiguration({"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]})
 
