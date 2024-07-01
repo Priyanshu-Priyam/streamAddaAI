@@ -133,7 +133,13 @@ def main():
             audio_file_path = save_audio_file(audio_data)
             # Transcribe the saved audio file
             transcription = whisper_transcribe(audio_file_path)
+            st.session_state['transcription'] = transcription  # Store transcription in session state
             st.write(transcription)
+
+    # Display transcribed text if it exists
+    if 'transcription' in st.session_state:
+        st.subheader("Transcribed Audio")
+        st.write(st.session_state['transcription'])
 
     if 'chat_history' not in st.session_state:
         st.session_state['chat_history'] = []
