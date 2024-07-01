@@ -86,9 +86,9 @@ def get_response(api_key, message, context, image_b64=None):
 
 
 def encode_image_to_base64(image):
-    
-    
-    return base64.b64encode(image.read()).decode('utf-8')
+    buffered = io.BytesIO()
+    image.save(buffered, format="JPEG")  # You can change "JPEG" to "PNG" if you prefer
+    return base64.b64encode(buffered.getvalue()).decode('utf-8')
 
 
 
