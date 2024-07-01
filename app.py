@@ -1,5 +1,8 @@
 import streamlit as st
 from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration
+import asyncio
+
+
 import openai
 import base64
 from PIL import Image
@@ -7,7 +10,9 @@ import io
 import asyncio
 # from openai_whisper import audio
 
-RTC_CONFIGURATION = RTCConfiguration({"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]})
+RTC_CONFIGURATION = RTCConfiguration({
+    "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
+})
 
 MODEL ="gpt-4o"
 
@@ -118,17 +123,22 @@ def main():
     with st.container():
         # Handling the voice input
         with st.expander("Click to speak"):
-            webrtc_ctx = webrtc_streamer(key="whisper", mode=WebRtcMode.SENDONLY, audio_receiver=True, rtc_configuration=RTC_CONFIGURATION)
-            if webrtc_ctx.audio_receiver:
-                audio_frames = webrtc_ctx.audio_receiver.get_frames(timeout=1)
-                if audio_frames:
-                    audio_file = io.BytesIO()
-                    audio.save(audio_frames, audio_file, format="wav")
-                    audio_file.seek(0)
-                    transcribed_text = whisper_transcribe(audio_file)
-                    st.write("Transcribed Text:", transcribed_text)
-                    st.session_state['user_input'] = transcribed_text
+            webrtc_ctx = webrtc_streamer(key="whisper", mode=WebRtcMode.SENDONLY, rtc_configuration=RTC_CONFIGURATION)
+            if webrtc_ctx.state.playing:
+                audio_processor = webrtc_ctx.audio_receiver
+                if audio_processor:
+                    async def process_audio():
+                        audio_frames = await audio_processor.get_frames()
+                        if audio_frames:
+                            audio_file = io.BytesIO()
+                            audio.save(audio_frames, audio_file, format="wav")
+                            audio_file.seek(0)
+                            transcribed_text = whisper_transcribe(audio_file)
+                            st.session_state['user_input'] = transcribed_text
 
+                    asyncio.run(process_audio())
+
+        
         for question, answer, img in st.session_state['chat_history']:
             st.text_area("Question:", value=question, height=100, key=question + "_q")
             st.text_area("Answer:", value=answer, height=150, key=answer + "_a")
