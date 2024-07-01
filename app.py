@@ -134,7 +134,7 @@ def main():
             # Transcribe the saved audio file
             transcription = whisper_transcribe(audio_file_path)
             st.session_state['transcription'] = transcription  # Store transcription in session state
-            st.write(transcription)
+            st.write("Transcription: " + transcription)  # Display transcription immediately for debugging
 
     # Display transcribed text if it exists
     if 'transcription' in st.session_state:
