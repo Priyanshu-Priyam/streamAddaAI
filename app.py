@@ -1,12 +1,26 @@
 import streamlit as st
+from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration
 import openai
 import base64
 from PIL import Image
 import io
 
 
+RTC_CONFIGURATION = RTCConfiguration(
+    {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
+)
+
 
 MODEL ="gpt-4o"
+
+def whisper_audio_text(api_key, audio_file):
+    # client = openai.OpenAI(api_key=api_key)
+    # response = client.audio.transcriptions.create(
+    #     model="whisper-base", 
+    #     file=audio_file
+    # )
+    # return response['text']
+    return "HI , please explain me this image"
 
 def summarize_conversation(api_key, text):
     client = openai.OpenAI(api_key=api_key)
@@ -97,6 +111,21 @@ def main():
 
     with st.container():
         api_key = st.text_input("Enter your OpenAI API Key:", type="password", key="api_key")
+
+    # Implementing the audio recorder using streamlit-webrtc
+    with st.container():
+        st.write("Record your question")
+        webrtc_ctx = webrtc_streamer(key="example", mode=WebRtcMode.SENDONLY, rtc_configuration=RTC_CONFIGURATION, audio_receiver=True)
+
+    if webrtc_ctx.audio_receiver:
+        audio_frames = webrtc_ctx.audio_receiver.get_frames(timeout=5)
+        if audio_frames:
+            audio_frame = audio_frames[-1]  # Get the last frame
+            audio_bytes = io.BytesIO()
+            audio_frame.to_wav_file(audio_bytes)
+            audio_bytes.seek(0)  # Rewind to the beginning of the file
+            transcript = whisper_audio_text(api_key, audio_bytes)
+            st.write("Transcribed text:", transcript)
 
     if 'chat_history' not in st.session_state:
         st.session_state['chat_history'] = []
